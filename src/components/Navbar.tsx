@@ -1,80 +1,76 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
-import logo from "../images/logo.png";
-// import { RxHamburgerMenu } from 'react-icons/rx';
-import { PopupMenu } from "./PopupMenu";
+import React from 'react';
+import { BsBag } from 'react-icons/bs';
+import { SiNike } from 'react-icons/si';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Search } from './Search';
+import { useSearchContext } from '../hooks/useSearchContext';
+import { useCartContext } from '../hooks/useCartContext';
+import { useSelector } from 'react-redux';
+import { selectCart } from '../redux/slices/cartSlice';
+import clsx from 'clsx';
 
-export type NavProps = {
-  navlinks: {
-    link: string;
-    id: string;
-  }[];
-};
+export const Navbar = () => {
+  const { totalQnt } = useSelector(selectCart);
+  const loc = useLocation();
+  const isHomePage = loc.pathname === '/';
+  const { setSearchVal } = useSearchContext();
+  const { setCartState } = useCartContext();
+  const nav = useNavigate();
 
-export const Navbar = ({ navlinks }: NavProps) => {
-  const [popupState, setPopupState] = React.useState(false);
-  const popupRef = React.useRef<HTMLDivElement>(null);
-  const hamburgerRef = React.useRef<HTMLButtonElement>(null);
+  const [navState, setNavState] = React.useState(false);
+  const [tempSearch, setTempSearch] = React.useState('');
 
   React.useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        popupRef.current &&
-        hamburgerRef.current &&
-        !e.composedPath().includes(popupRef.current) &&
-        !e.composedPath().includes(hamburgerRef.current)
-      ) {
-        setPopupState(false);
-      }
+    const onNavScroll = () => {
+      setNavState(window.scrollY > 250);
     };
-    document.body.addEventListener("click", handleClickOutside);
-
-    return () => document.body.removeEventListener("click", handleClickOutside);
+    window.addEventListener('scroll', onNavScroll);
+    return () => window.removeEventListener('scroll', onNavScroll);
   }, []);
 
+  const handleHomeClick = () => {
+    setSearchVal('');
+    setTempSearch('');
+    nav('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openCartBtn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setCartState(true);
+  };
+
   return (
-    <>
-      {/* <header className=" bg-white/80 bg-clip-padding bg-opacity-20 left-0 right-0 top-0 z-10 backdrop-filter backdrop-blur-sm shadow-sm shadow-slate-100 fixed"> */}
-      <header className="fixed left-0 right-0 top-0 z-10 bg-emerald-200/20 backdrop-blur-sm backdrop-filter">
-        <nav className="trav-container flex h-14 items-center justify-between pl-20">
-          <NavLink to="/" className="">
-            <img src={logo} alt="logo/img" className="w-22 h-9 object-fill" />
-          </NavLink>
-          <ul className="hidden gap-5 text-slate-900 sm:flex">
-            {navlinks.map(({ link, id }) => (
-              <li key={id}>
-                <NavLink to={`/${id}`}>{link}</NavLink>
-              </li>
-            ))}
-          </ul>
-          <ul>
-            <li>
-              <button className="btn-emerald hidden py-1.5 sm:block">
-                Join Us
-              </button>
-            </li>
-          </ul>
-          <div>
-            <button
-              ref={hamburgerRef}
-              onClick={() => setPopupState((prev) => !prev)}
-              className={`relative flex h-10 w-10 items-center justify-center transition-all duration-200 active:scale-90 sm:hidden ${
-                popupState ? "toggle-btn" : ""
-              }`}
+    <div className="fixed left-0 right-0 top-0 py-2 sm:py-1 px-3.5 z-40 text-white backdrop-blur-sm backdrop-filter">
+      <div className="flex justify-between items-center">
+        <button onClick={handleHomeClick}>
+          <SiNike
+            className={clsx(
+              'opacity-80 size-10 xs:size-11 sm:size-12 ml-2 active:scale-90 active:duration-100 hover:scale-110',
+              navState ? 'text-gray-900/60 transition-all duration-300' : 'text-white/50',
+            )}
+          />
+        </button>
+        <div className="relative flex items-center gap-2">
+          {isHomePage && <Search tempSearch={tempSearch} setTempSearch={setTempSearch} />}
+          <button className="relative" onClick={openCartBtn}>
+            <BsBag
+              className={clsx(
+                'size-5 lg:size-6 transition-all duration-300 hover:scale-110 active:-scale-x-150 cursor-pointer',
+                navState ? 'text-gray-900/60 transition-all duration-300' : 'text-white/50',
+              )}
+            />
+            <div
+              className={clsx(
+                'absolute top-2.5 lg:top-3 -right-0.5 text-xs font-light rounded-full px-1',
+                navState ? 'bg-black/80 text-white' : 'bg-white/80 text-black/80',
+              )}
             >
-              {/* <RxHamburgerMenu className="size-7 block sm:hidden" /> */}
-              <div className="absolute right-2 h-0.5 w-8 rounded bg-slate-800 transition-all duration-500 before:absolute before:h-0.5 before:w-8 before:-translate-x-4 before:-translate-y-2 before:rounded before:bg-slate-800 before:transition-all before:duration-500 before:content-[''] after:absolute after:h-0.5 after:w-8 after:-translate-x-4 after:translate-y-2 after:rounded after:bg-slate-800 after:transition-all after:duration-500 after:content-['']"></div>
-            </button>
-          </div>
-        </nav>
-      </header>
-      {/* {visiblePopup && <PopupMenu navlinks={navlinks} />} */}
-      <PopupMenu
-        popupRef={popupRef}
-        navlinks={navlinks}
-        popupState={popupState}
-        closePopup={() => setPopupState(false)}
-      />
-    </>
+              {totalQnt}
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
